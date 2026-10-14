@@ -25,7 +25,7 @@ updates.
 
 You need:
 
-- Home Assistant **2026.10 or newer**.
+- Home Assistant **2026.7.3 or newer** (confirmed working on 2026.7.3).
 - A compatible Chery iCar using the CarLinko Bluetooth protocol.
 - An **ESPHome Bluetooth proxy near the car**, added to Home Assistant with active
   connections enabled, or a supported local Bluetooth adapter within range.
