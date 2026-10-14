@@ -1,0 +1,62 @@
+{
+  "title": "Chery iCar BLE",
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "title": "Find your car",
+        "description": "Looking for nearby CHR vehicles through your Bluetooth adapters and ESPHome proxies."
+      },
+      "not_found": {
+        "title": "No vehicle available",
+        "description": "{reason}",
+        "menu_options": {
+          "retry": "Search again",
+          "manual": "Enter address manually"
+        }
+      },
+      "select": {
+        "title": "Select your car",
+        "description": "Choose a nearby CarLinko vehicle.",
+        "data": {
+          "address": "Vehicle"
+        }
+      },
+      "manual": {
+        "title": "Enter the car address",
+        "description": "Use manual entry if automatic discovery cannot find your car. It must still be reachable to verify the connection.",
+        "data": {
+          "address": "Bluetooth address",
+          "name": "Vehicle name"
+        }
+      },
+      "confirm": {
+        "title": "Connect to {name}",
+        "description": "Confirm to check the connection and read status. Close CarLinko on your phone first so it releases Bluetooth.",
+        "data": {
+          "poll_minutes": "Polling interval (minutes)"
+        }
+      }
+    },
+    "error": {
+      "invalid_address": "Enter a Bluetooth address such as AA:BB:CC:DD:EE:FF.",
+      "not_found": "The car is not visible through a connectable Bluetooth adapter or proxy. Check range, close CarLinko, then try again.",
+      "cannot_connect": "Could not read status. Close CarLinko, check the proxy is online and near the car, then try again.",
+      "unsupported_device": "The device did not provide a supported CarLinko status response."
+    },
+    "abort": {
+      "already_configured": "This vehicle is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Polling settings",
+        "description": "Connect, request status, and disconnect every 1\u20131440 minutes. Changing this setting reloads the integration and reads status immediately.",
+        "data": {
+          "poll_minutes": "Polling interval (minutes)"
+        }
+      }
+    }
+  }
+}

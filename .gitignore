@@ -1,0 +1,19 @@
+/artifacts/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+.coverage
+htmlcov/
+
+# Private inputs, captures and generated packages
+*.log
+*.apk
+*.xapk
+*.zip
+*.pcap
+*.pcapng
+*.btsnoop
+.env
+.env.*

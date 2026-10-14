@@ -1,0 +1,22 @@
+{
+  "domain": "chery_icar",
+  "name": "Chery iCar BLE",
+  "bluetooth": [
+    {
+      "local_name": "CHR*",
+      "connectable": true
+    }
+  ],
+  "codeowners": [
+    "@hmsta"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "bluetooth"
+  ],
+  "documentation": "https://github.com/hmsta/ha-chery-icar",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/hmsta/ha-chery-icar/issues",
+  "requirements": [],
+  "version": "0.2.0"
+}
