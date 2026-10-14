@@ -1,6 +1,6 @@
 # Chery iCar BLE for Home Assistant
 
-Monitor your Chery iCar's battery and tires locally over Bluetooth, using an
+Monitor your Chery iCar's battery, range, odometer and tires locally over Bluetooth, using an
 ESPHome Bluetooth proxy or a Bluetooth adapter connected to Home Assistant.
 
 **No cloud account or app credentials required for the tested status connection.**
@@ -11,6 +11,7 @@ ESPHome Bluetooth proxy or a Bluetooth adapter connected to Home Assistant.
 
 - Main battery charge percentage.
 - 12 V battery voltage.
+- Remaining range and odometer in kilometres.
 - Tire pressure and temperature for each wheel.
 - A **Refresh status** button for an immediate reading.
 - Automatic discovery of nearby cars whose Bluetooth name starts with `CHR`.
@@ -119,7 +120,9 @@ This is a configuration fragment, not complete ESPHome firmware. See the
   when each sensor last measured its value.
 - Sleep behavior and the effect of frequent polling on the car are not yet characterized.
 - Tire invalid-value indicators have not been fully decoded.
-- Mileage, range, location and vehicle-control features are not exposed.
+- Range and odometer were verified against the owner's display in kilometres.
+  Range uses the field confirmed for this vehicle; other vehicle variants may differ.
+- Location and vehicle-control features are not exposed.
 
 For problems, [open an issue](https://github.com/hmsta/ha-chery-icar/issues) with your
 HA version, vehicle model, and relevant error message. Remove private data from

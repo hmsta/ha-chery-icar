@@ -1,4 +1,4 @@
-"""Confirmed battery and per-wheel readings."""
+"""Confirmed battery, distance and per-wheel readings."""
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -9,6 +9,7 @@ from homeassistant.components.sensor import (
 from homeassistant.const import (
     PERCENTAGE,
     UnitOfElectricPotential,
+    UnitOfLength,
     UnitOfPressure,
     UnitOfTemperature,
 )
@@ -17,6 +18,22 @@ from .const import WHEELS
 from .entity import CarEntity
 
 DESCRIPTIONS = (
+    SensorEntityDescription(
+        key="remaining_range",
+        name="Remaining range",
+        device_class=SensorDeviceClass.DISTANCE,
+        native_unit_of_measurement=UnitOfLength.KILOMETERS,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
+    ),
+    SensorEntityDescription(
+        key="odometer",
+        name="Odometer",
+        device_class=SensorDeviceClass.DISTANCE,
+        native_unit_of_measurement=UnitOfLength.KILOMETERS,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        suggested_display_precision=1,
+    ),
     SensorEntityDescription(
         key="battery",
         name="Main battery",

@@ -24,6 +24,8 @@ def frame(body):
 # Synthetic fixture with known measurement values; no captured/private payload.
 _data = bytearray(70)
 _data[10:12] = (1419).to_bytes(2, "big")
+_data[16:19] = (1403).to_bytes(3, "big")
+_data[27:29] = (153).to_bytes(2, "big")
 _data[26] = 35
 _data[42:50] = bytes([113, 116, 112, 115, 70, 77, 69, 75])
 SAVED = frame(b"\x77\x00" + _data)
@@ -37,6 +39,8 @@ class ProtocolTests(unittest.TestCase):
 
     def test_known_measurements(self):
         status = decode_status(SAVED)
+        self.assertEqual(status["odometer"], 1403)
+        self.assertEqual(status["remaining_range"], 153)
         self.assertEqual(status["battery"], 35)
         self.assertEqual(status["low_voltage"], 14.19)
         for wheel, pressure, temperature in (
@@ -75,3 +79,23 @@ class ProtocolTests(unittest.TestCase):
         body = bytearray(SAVED[4:-2])
         body[28] = 255
         self.assertIsNone(decode_status(frame(body))["battery"])
+
+    def test_fractional_odometer(self):
+        data = bytearray(_data)
+        data[16:19] = (0x800000 | 14037).to_bytes(3, "big")
+        self.assertEqual(decode_status(frame(b"\x77\x00" + data))["odometer"], 1403.7)
+
+    def test_range_unavailable_values(self):
+        for value in (0, 1023):
+            data = bytearray(_data)
+            data[27:29] = value.to_bytes(2, "big")
+            self.assertIsNone(decode_status(frame(b"\x77\x00" + data))["remaining_range"])
+
+    def test_zero_odometer_and_valid_range_boundaries(self):
+        for value in (1, 1022):
+            data = bytearray(_data)
+            data[16:19] = bytes(3)
+            data[27:29] = value.to_bytes(2, "big")
+            status = decode_status(frame(b"\x77\x00" + data))
+            self.assertEqual(status["odometer"], 0)
+            self.assertEqual(status["remaining_range"], value)

@@ -29,7 +29,12 @@ def decode_status(frame: bytes) -> dict[str, int | float | None]:
     data = frame[6:-2]
     if len(data) != 70:
         raise ValueError(f"Unsupported status payload length: {len(data)}")
+    mileage = int.from_bytes(data[16:19], "big")
+    remaining_range = int.from_bytes(data[27:29], "big")
     result = {
+        "odometer": round((mileage & 0x7FFFFF) * (0.1 if mileage & 0x800000 else 1), 1),
+        # Confirmed range field for the tested vehicle; app treats 0/1023 as unavailable.
+        "remaining_range": remaining_range if remaining_range not in (0, 1023) else None,
         "battery": data[26] if data[26] <= 100 else None,
         "low_voltage": int.from_bytes(data[10:12], "big") / 100,
     }
