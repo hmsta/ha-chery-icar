@@ -1,9 +1,10 @@
 """Sensor metadata and availability contract checks using lightweight HA doubles."""
+import asyncio
 import importlib
 import sys
 import types
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import test_protocol  # noqa: F401
 
@@ -56,10 +57,25 @@ class SensorTests(unittest.TestCase):
             coordinator.last_update_success = False
             self.assertFalse(remaining.available)
 
-            coordinator.last_successful_update = None
-            timestamp = module.CarSensor(coordinator, descriptions["last_successful_update"])
-            self.assertFalse(timestamp.available)
-            from datetime import UTC, datetime
-            coordinator.last_successful_update = datetime.now(UTC)
-            self.assertTrue(timestamp.available)
-            self.assertEqual(timestamp.native_value, coordinator.last_successful_update)
+            self.assertNotIn("last_successful_update", descriptions)
+            for description in descriptions.values():
+                self.assertFalse(module.CarSensor(coordinator, description).available)
+
+            helpers = types.ModuleType("homeassistant.helpers")
+            registry_module = types.ModuleType("homeassistant.helpers.entity_registry")
+            registry = Mock()
+            registry_module.async_get = Mock(return_value=registry)
+            helpers.entity_registry = registry_module
+            coordinator.address = "AA:BB:CC:DD:EE:FF"
+            entry = types.SimpleNamespace(runtime_data=coordinator, entry_id="this_car")
+            registry.async_get_entity_id.return_value = "sensor.old_timestamp"
+            with patch.dict(sys.modules, {
+                "homeassistant.helpers": helpers,
+                "homeassistant.helpers.entity_registry": registry_module,
+            }):
+                registry.async_get.return_value = types.SimpleNamespace(config_entry_id="other_car")
+                asyncio.run(module.async_setup_entry(object(), entry, Mock()))
+                registry.async_remove.assert_not_called()
+                registry.async_get.return_value = types.SimpleNamespace(config_entry_id="this_car")
+                asyncio.run(module.async_setup_entry(object(), entry, Mock()))
+                registry.async_remove.assert_called_once_with("sensor.old_timestamp")

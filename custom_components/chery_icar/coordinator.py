@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 
 from bleak.exc import BleakError
 from homeassistant.components import bluetooth
@@ -34,8 +34,7 @@ class CarCoordinator(DataUpdateCoordinator):
         self._normal_interval = self.update_interval
         self._retry_count = 0
         self._retries_exhausted = False
-        self._last_status = None
-        self.last_successful_update = None
+        self._has_read_status = False
 
     async def _async_update_data(self):
         try:
@@ -45,22 +44,22 @@ class CarCoordinator(DataUpdateCoordinator):
             self._poll_task = asyncio.create_task(read_status(device))
             status = await self._poll_task
         except (BleakError, TimeoutError, OSError, ValueError) as err:
-            # Startup failures remain HA setup retries; never invent initial data.
-            if self._last_status is not None and not self._retries_exhausted:
+            # Startup failures remain HA setup retries. Established entries retry
+            # sooner, but every failed read immediately marks entities unavailable.
+            self.update_interval = self._normal_interval
+            if self._has_read_status and not self._retries_exhausted:
                 delays = (timedelta(minutes=1), timedelta(minutes=5))
                 if self._retry_count < len(delays):
                     self.update_interval = min(delays[self._retry_count], self._normal_interval)
                     self._retry_count += 1
                     _LOGGER.debug("Status read failed; retry %s in %s: %s",
                                   self._retry_count, self.update_interval, err)
-                    return self._last_status
-                self._retries_exhausted = True
-            self.update_interval = self._normal_interval
+                else:
+                    self._retries_exhausted = True
             raise UpdateFailed(f"Unable to read car status: {err}") from err
         finally:
             self._poll_task = None
-        self._last_status = status
-        self.last_successful_update = datetime.now(UTC)
+        self._has_read_status = True
         self._retry_count = 0
         self._retries_exhausted = False
         self.update_interval = self._normal_interval

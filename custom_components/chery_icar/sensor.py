@@ -22,11 +22,6 @@ from .protocol import CHARGING_MODES, CHARGING_STATES
 
 DESCRIPTIONS = (
     SensorEntityDescription(
-        key="last_successful_update",
-        name="Last successful update",
-        device_class=SensorDeviceClass.TIMESTAMP,
-    ),
-    SensorEntityDescription(
         key="charging_status",
         name="Charging status",
         translation_key="charging_status",
@@ -124,6 +119,17 @@ DESCRIPTIONS = (
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
+    # Remove the timestamp entity introduced in 0.4.0 for this vehicle only.
+    from homeassistant.helpers import entity_registry as er
+
+    registry = er.async_get(hass)
+    entity_id = registry.async_get_entity_id(
+        "sensor", "chery_icar", f"{entry.runtime_data.address}_last_successful_update"
+    )
+    if entity_id is not None:
+        registered = registry.async_get(entity_id)
+        if registered is not None and registered.config_entry_id == entry.entry_id:
+            registry.async_remove(entity_id)
     async_add_entities(CarSensor(entry.runtime_data, description) for description in DESCRIPTIONS)
 
 
@@ -134,8 +140,6 @@ class CarSensor(CarEntity, SensorEntity):
 
     @property
     def available(self):
-        if self.entity_description.key == "last_successful_update":
-            return self.coordinator.last_successful_update is not None
         if not super().available:
             return False
         if self.entity_description.key == "charging_time_remaining":
@@ -144,6 +148,4 @@ class CarSensor(CarEntity, SensorEntity):
 
     @property
     def native_value(self):
-        if self.entity_description.key == "last_successful_update":
-            return self.coordinator.last_successful_update
         return self.coordinator.data.get(self.entity_description.key)
