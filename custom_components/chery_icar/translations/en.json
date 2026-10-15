@@ -58,5 +58,29 @@
         }
       }
     }
+  },
+  "entity": {
+    "sensor": {
+      "charging_status": {
+        "name": "Charging status",
+        "state": {
+          "idle": "Idle",
+          "charging": "Charging",
+          "completed": "Completed",
+          "cancelled": "Cancelled",
+          "heating": "Heating",
+          "stopped": "Stopped"
+        }
+      },
+      "charging_mode": {
+        "name": "Charging mode",
+        "state": {
+          "not_charging": "Not charging",
+          "slow": "Slow",
+          "fast": "Fast",
+          "connected_not_charging": "Connected, not charging"
+        }
+      }
+    }
   }
 }

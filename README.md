@@ -12,6 +12,9 @@ ESPHome Bluetooth proxy or a Bluetooth adapter connected to Home Assistant.
 - Main battery charge percentage.
 - 12 V battery voltage.
 - Remaining range and odometer in kilometres.
+- Charging status, charging mode, and charging power in kW.
+- Estimated charging time remaining in minutes, available while charging or heating.
+- Optional **Remaining range WLTC** in kilometres (disabled by default).
 - Tire pressure and temperature for each wheel.
 - A **Refresh status** button for an immediate reading.
 - Automatic discovery of nearby cars whose Bluetooth name starts with `CHR`.
@@ -75,6 +78,15 @@ Use the integration's **Configure** menu to change polling from the default
 30 minutes to any interval from 1 to 1440 minutes. Changing the interval reloads
 the integration and requests a reading immediately.
 
+To use the alternative WLTC range estimate, open the vehicle's entities, select
+**Remaining range WLTC**, and enable it in the entity settings.
+
+Charging readings update on the same polling interval. Remaining time is the
+car's last reported estimate, not a local countdown. It becomes unavailable when
+the next poll reports that charging has stopped. Mode labels follow CarLinko's
+icons: slow, fast, connected but not charging, and not charging; unrecognized
+codes show as unknown. Only slow charging has been verified live so far.
+
 Tire pressure is reported in kPa. Home Assistant's sensor settings let you choose
 bar or psi. Temperature is reported in Celsius and supports HA's unit conversion.
 
@@ -119,7 +131,8 @@ This is a configuration fragment, not complete ESPHome firmware. See the
 - The vehicle may return cached readings. Polling successfully does not prove
   when each sensor last measured its value.
 - Sleep behavior and the effect of frequent polling on the car are not yet characterized.
-- Tire invalid-value indicators have not been fully decoded.
+- Tire and charging invalid-value indicators have not been fully decoded.
+  Charging time and power were checked against the owner's app during charging.
 - Range and odometer were verified against the owner's display in kilometres.
   Range uses the field confirmed for this vehicle; other vehicle variants may differ.
 - Location and vehicle-control features are not exposed.

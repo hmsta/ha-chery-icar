@@ -2,6 +2,14 @@
 
 from .const import WHEELS
 
+CHARGING_STATES = {
+    0: "idle", 1: "charging", 2: "completed", 3: "cancelled",
+    4: "heating", 5: "stopped",
+}
+CHARGING_MODES = {
+    0: "not_charging", 1: "slow", 2: "connected_not_charging", 16: "fast",
+}
+
 
 def crc16(body: bytes) -> int:
     """CRC-16/ARC over body only; encoded big endian on the wire."""
@@ -22,7 +30,7 @@ def valid_frame(frame: bytes) -> bool:
     )
 
 
-def decode_status(frame: bytes) -> dict[str, int | float | None]:
+def decode_status(frame: bytes) -> dict[str, int | float | str | None]:
     """Reject unfamiliar layouts instead of interpreting missing data as zero."""
     if not valid_frame(frame) or frame[4:6] != b"\x77\x00":
         raise ValueError("Invalid status frame")
@@ -31,7 +39,18 @@ def decode_status(frame: bytes) -> dict[str, int | float | None]:
         raise ValueError(f"Unsupported status payload length: {len(data)}")
     mileage = int.from_bytes(data[16:19], "big")
     remaining_range = int.from_bytes(data[27:29], "big")
+    wltc_range = int.from_bytes(data[66:68], "big")
+    charging_minutes = int.from_bytes(data[56:58], "big")
+    charging_power = int.from_bytes(data[60:62], "big")
     result = {
+        "charging_status": CHARGING_STATES.get(data[55]),
+        "charging_mode": CHARGING_MODES.get(data[54]),
+        "charging_power": charging_power / 10 if charging_power != 0xFFFF else None,
+        # CarLinko shows remaining time only in charging/heating states.
+        "charging_time_remaining": (
+            charging_minutes if data[55] in (1, 4) and charging_minutes != 0xFFFF else None
+        ),
+        "remaining_range_wltc": wltc_range if wltc_range not in (0, 1023, 0xFFFF) else None,
         "odometer": round((mileage & 0x7FFFFF) * (0.1 if mileage & 0x800000 else 1), 1),
         # Confirmed range field for the tested vehicle; app treats 0/1023 as unavailable.
         "remaining_range": remaining_range if remaining_range not in (0, 1023) else None,

@@ -10,14 +10,58 @@ from homeassistant.const import (
     PERCENTAGE,
     UnitOfElectricPotential,
     UnitOfLength,
+    UnitOfPower,
     UnitOfPressure,
     UnitOfTemperature,
+    UnitOfTime,
 )
 
 from .const import WHEELS
 from .entity import CarEntity
+from .protocol import CHARGING_MODES, CHARGING_STATES
 
 DESCRIPTIONS = (
+    SensorEntityDescription(
+        key="charging_status",
+        name="Charging status",
+        translation_key="charging_status",
+        device_class=SensorDeviceClass.ENUM,
+        options=list(CHARGING_STATES.values()),
+        icon="mdi:ev-station",
+    ),
+    SensorEntityDescription(
+        key="charging_mode",
+        name="Charging mode",
+        translation_key="charging_mode",
+        device_class=SensorDeviceClass.ENUM,
+        options=list(CHARGING_MODES.values()),
+        icon="mdi:ev-plug-type2",
+    ),
+    SensorEntityDescription(
+        key="charging_power",
+        name="Charging power",
+        device_class=SensorDeviceClass.POWER,
+        native_unit_of_measurement=UnitOfPower.KILO_WATT,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+    ),
+    SensorEntityDescription(
+        key="charging_time_remaining",
+        name="Estimated charging time remaining",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
+    ),
+    SensorEntityDescription(
+        key="remaining_range_wltc",
+        name="Remaining range WLTC",
+        device_class=SensorDeviceClass.DISTANCE,
+        native_unit_of_measurement=UnitOfLength.KILOMETERS,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
+        entity_registry_enabled_default=False,
+    ),
     SensorEntityDescription(
         key="remaining_range",
         name="Remaining range",
@@ -82,6 +126,14 @@ class CarSensor(CarEntity, SensorEntity):
     def __init__(self, coordinator, description):
         super().__init__(coordinator, description.key)
         self.entity_description = description
+
+    @property
+    def available(self):
+        if not super().available:
+            return False
+        if self.entity_description.key == "charging_time_remaining":
+            return self.coordinator.data.get("charging_time_remaining") is not None
+        return True
 
     @property
     def native_value(self):

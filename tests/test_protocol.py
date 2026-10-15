@@ -99,3 +99,41 @@ class ProtocolTests(unittest.TestCase):
             status = decode_status(frame(b"\x77\x00" + data))
             self.assertEqual(status["odometer"], 0)
             self.assertEqual(status["remaining_range"], value)
+
+    def test_charging_measurements(self):
+        data = bytearray(_data)
+        data[54:58] = bytes.fromhex("010102cd")
+        data[60:62] = (20).to_bytes(2, "big")
+        data[66:68] = (121).to_bytes(2, "big")
+        status = decode_status(frame(b"\x77\x00" + data))
+        self.assertEqual(status["charging_status"], "charging")
+        self.assertEqual(status["charging_mode"], "slow")
+        self.assertEqual(status["charging_power"], 2.0)
+        self.assertEqual(status["charging_time_remaining"], 717)
+        self.assertEqual(status["remaining_range_wltc"], 121)
+
+    def test_charging_states_and_stale_time(self):
+        for code, state in enumerate(("idle", "charging", "completed", "cancelled", "heating", "stopped")):
+            data = bytearray(_data)
+            data[55] = code
+            data[56:58] = (717).to_bytes(2, "big")
+            status = decode_status(frame(b"\x77\x00" + data))
+            self.assertEqual(status["charging_status"], state)
+            self.assertEqual(status["charging_time_remaining"], 717 if code in (1, 4) else None)
+
+    def test_modes_unknown_codes_and_unavailable_values(self):
+        for code, mode in ((0, "not_charging"), (1, "slow"), (2, "connected_not_charging"), (16, "fast"), (3, None), (255, None)):
+            data = bytearray(_data)
+            data[54] = code
+            data[55] = 255
+            status = decode_status(frame(b"\x77\x00" + data))
+            self.assertEqual(status["charging_mode"], mode)
+            self.assertIsNone(status["charging_status"])
+            self.assertIsNone(status["charging_time_remaining"])
+        data[55] = 1
+        data[56:58] = data[60:62] = b"\xff\xff"
+        for value in (0, 1023, 65535):
+            data[66:68] = value.to_bytes(2, "big")
+            status = decode_status(frame(b"\x77\x00" + data))
+            for key in ("remaining_range_wltc", "charging_power", "charging_time_remaining"):
+                self.assertIsNone(status[key])
