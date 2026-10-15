@@ -1,24 +1,37 @@
 # Chery iCar BLE for Home Assistant
 
-Monitor your Chery iCar's battery, range, odometer and tires locally over Bluetooth, using an
+Monitor your Chery iCar's battery, charging, range, odometer and tires locally over Bluetooth, using an
 ESPHome Bluetooth proxy or a Bluetooth adapter connected to Home Assistant.
 
 **No cloud account or app credentials required for the tested status connection.**
 
-![Chery iCar battery and tire sensors in Home Assistant](docs/home-assistant-sensors.png)
+![Chery iCar battery, charging, range, odometer and tire sensors in Home Assistant](docs/home-assistant-sensors.png)
 
 ## What you get
 
-- Main battery charge percentage.
-- 12 V battery voltage.
-- Remaining range and odometer in kilometres.
-- Charging status, charging mode, and charging power in kW.
-- Estimated charging time remaining in minutes, available while charging or heating.
-- Optional **Remaining range WLTC** in kilometres (disabled by default).
-- Tire pressure and temperature for each wheel.
-- A **Refresh status** button for an immediate reading.
-- Automatic discovery of nearby cars whose Bluetooth name starts with `CHR`.
-- Polling every **30 minutes** by default, with a configurable interval.
+The integration provides **17 sensors**: 16 enabled by default and the optional
+WLTC range sensor disabled by default.
+
+| Sensor | Unit / values | Notes |
+| --- | --- | --- |
+| Main battery | % | Traction battery charge level. |
+| 12 V battery voltage | V | Low-voltage system reading. |
+| Charging status | Idle, Charging, Completed, Cancelled, Heating, Stopped | Current reported charging state. |
+| Charging mode | Slow, Fast, Connected but not charging, Not charging | Unrecognized codes show as unknown. |
+| Charging power | kW | Power reported by the car. |
+| Estimated charging time remaining | Minutes | Available while charging or heating; updates with each poll. |
+| Remaining range | km | The car's standard remaining-range estimate. |
+| Remaining range WLTC | km | Alternative estimate using the WLTC method; **disabled by default**. |
+| Odometer | km | Total distance travelled. |
+| Front left / front right / rear left / rear right tire pressure | kPa | Four individual sensors; HA can display bar or psi. |
+| Front left / front right / rear left / rear right tire temperature | °C | Four individual sensors. |
+
+The screenshot shows an active charging session. The grey **Remaining range WLTC**
+entry is disabled; enable it in the entity settings to use it.
+
+You also get a **Refresh status** button, automatic discovery of nearby `CHR`
+vehicles, and polling every **30 minutes** by default with a configurable interval.
+All sensors use the same status poll.
 
 The integration reads status only. It does not unlock, start, or otherwise control
 the car. Each poll disconnects after reading, leaving Bluetooth available between
