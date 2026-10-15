@@ -14,7 +14,7 @@ class SensorTests(unittest.TestCase):
         sensor.SensorEntity = type("SensorEntity", (), {})
         sensor.SensorEntityDescription = types.SimpleNamespace
         sensor.SensorDeviceClass = types.SimpleNamespace(**{x: x for x in (
-            "ENUM", "POWER", "DURATION", "DISTANCE", "BATTERY", "VOLTAGE", "PRESSURE", "TEMPERATURE"
+            "TIMESTAMP", "ENUM", "POWER", "DURATION", "DISTANCE", "BATTERY", "VOLTAGE", "PRESSURE", "TEMPERATURE"
         )})
         sensor.SensorStateClass = types.SimpleNamespace(MEASUREMENT="measurement", TOTAL_INCREASING="total_increasing")
         const = types.ModuleType("homeassistant.const")
@@ -55,3 +55,11 @@ class SensorTests(unittest.TestCase):
             self.assertTrue(remaining.available)
             coordinator.last_update_success = False
             self.assertFalse(remaining.available)
+
+            coordinator.last_successful_update = None
+            timestamp = module.CarSensor(coordinator, descriptions["last_successful_update"])
+            self.assertFalse(timestamp.available)
+            from datetime import UTC, datetime
+            coordinator.last_successful_update = datetime.now(UTC)
+            self.assertTrue(timestamp.available)
+            self.assertEqual(timestamp.native_value, coordinator.last_successful_update)

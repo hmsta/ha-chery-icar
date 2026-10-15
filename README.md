@@ -9,11 +9,12 @@ ESPHome Bluetooth proxy or a Bluetooth adapter connected to Home Assistant.
 
 ## What you get
 
-The integration provides **17 sensors**: 16 enabled by default and the optional
+The integration provides **18 sensors**: 17 enabled by default and the optional
 WLTC range sensor disabled by default.
 
 | Sensor | Unit / values | Notes |
 | --- | --- | --- |
+| Last successful update | Date and time | Last successful car reading; remains visible while offline. |
 | Main battery | % | Traction battery charge level. |
 | 12 V battery voltage | V | Low-voltage system reading. |
 | Charging status | Idle, Charging, Completed, Cancelled, Heating, Stopped | Current reported charging state. |
@@ -32,6 +33,15 @@ entry is disabled; enable it in the entity settings to use it.
 You also get a **Refresh status** button, automatic discovery of nearby `CHR`
 vehicles, and polling every **30 minutes** by default with a configurable interval.
 All sensors use the same status poll.
+
+If a read fails after a successful connection, the integration retries after
+**1 minute**, then **5 minutes after that retry**. Last readings stay visible during
+these retries; **Last successful update** shows how old they are. If both retries
+fail, readings become unavailable and normal polling resumes until the car responds.
+A successful read resets the retry allowance and starts the normal interval again.
+Retry delays never exceed your configured polling interval. **Refresh status** can
+still request a reading manually. On startup with no readings yet, Home Assistant
+handles setup retries.
 
 The integration reads status only. It does not unlock, start, or otherwise control
 the car. Each poll disconnects after reading, leaving Bluetooth available between

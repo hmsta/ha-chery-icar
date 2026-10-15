@@ -22,6 +22,11 @@ from .protocol import CHARGING_MODES, CHARGING_STATES
 
 DESCRIPTIONS = (
     SensorEntityDescription(
+        key="last_successful_update",
+        name="Last successful update",
+        device_class=SensorDeviceClass.TIMESTAMP,
+    ),
+    SensorEntityDescription(
         key="charging_status",
         name="Charging status",
         translation_key="charging_status",
@@ -129,6 +134,8 @@ class CarSensor(CarEntity, SensorEntity):
 
     @property
     def available(self):
+        if self.entity_description.key == "last_successful_update":
+            return self.coordinator.last_successful_update is not None
         if not super().available:
             return False
         if self.entity_description.key == "charging_time_remaining":
@@ -137,4 +144,6 @@ class CarSensor(CarEntity, SensorEntity):
 
     @property
     def native_value(self):
+        if self.entity_description.key == "last_successful_update":
+            return self.coordinator.last_successful_update
         return self.coordinator.data.get(self.entity_description.key)

@@ -232,6 +232,43 @@ class FrameworkTests(unittest.IsolatedAsyncioTestCase):
         with patch.object(
             self.coordinator_module, "read_status", AsyncMock(side_effect=TimeoutError)
         ):
-            with self.assertRaises(UpdateFailed):
+            timestamp = coordinator.last_successful_update
+            for minutes in (1, 5):
+                self.assertEqual(await coordinator._async_update_data(), {"battery": 35})
+                self.assertEqual(coordinator.update_interval, timedelta(minutes=minutes))
+                self.assertEqual(coordinator.last_successful_update, timestamp)
+            for _ in range(2):
+                with self.assertRaises(UpdateFailed):
+                    await coordinator._async_update_data()
+                self.assertEqual(coordinator.update_interval, timedelta(minutes=30))
+        self.assertIsNone(coordinator._poll_task)
+        with patch.object(self.coordinator_module, "read_status", AsyncMock(return_value={"battery": 40})):
+            self.assertEqual(await coordinator._async_update_data(), {"battery": 40})
+            self.assertEqual(coordinator.update_interval, timedelta(minutes=30))
+            self.assertFalse(coordinator._retries_exhausted)
+        self.bluetooth.async_ble_device_from_address.return_value = None
+        self.assertEqual(await coordinator._async_update_data(), {"battery": 40})
+        self.assertEqual(coordinator.update_interval, timedelta(minutes=1))
+
+    async def test_short_polling_interval_caps_retries(self):
+        self.entry.options = {"poll_minutes": 1}
+        coordinator = self.coordinator_module.CarCoordinator(object(), self.entry)
+        self.bluetooth.async_ble_device_from_address.return_value = object()
+        with patch.object(self.coordinator_module, "read_status", AsyncMock(return_value={"battery": 40})):
+            await coordinator._async_update_data()
+        self.bluetooth.async_ble_device_from_address.return_value = None
+        for _ in range(2):
+            await coordinator._async_update_data()
+            self.assertEqual(coordinator.update_interval, timedelta(minutes=1))
+
+    async def test_cancelled_read_does_not_consume_retry(self):
+        import asyncio
+
+        coordinator = self.coordinator_module.CarCoordinator(object(), self.entry)
+        self.bluetooth.async_ble_device_from_address.return_value = object()
+        with patch.object(self.coordinator_module, "read_status", AsyncMock(side_effect=asyncio.CancelledError)):
+            with self.assertRaises(asyncio.CancelledError):
                 await coordinator._async_update_data()
+        self.assertEqual(coordinator._retry_count, 0)
+        self.assertIsNone(coordinator.last_successful_update)
         self.assertIsNone(coordinator._poll_task)
